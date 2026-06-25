@@ -1,7 +1,7 @@
 name: textemplate
 description: 文本模板生成器 - 快速生成包含变量的文字内容
 publish_to: 'none'
-version: 1.0.0+1
+version: 0.1.0+1
 
 environment:
   sdk: ^3.12.2

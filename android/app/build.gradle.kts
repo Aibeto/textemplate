@@ -36,6 +36,30 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // 动态修改 APK 输出文件名
+    applicationVariants.all {
+        val variant = this
+        variant.outputs.all {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            
+            // 获取 pubspec.yaml 中定义的 versionName (例如 "1.2.0")
+            val versionName = variant.versionName
+            
+            // 获取当前的构建类型 (release 或 debug)
+            val buildType = variant.buildType.name
+            
+            // 获取当前的 ABI (armeabi-v7a、arm64-v8a、x86、x86_64)
+            val abi = output.filters.find { 
+                it.filterType.toString() == "ABI" 
+            }?.identifier ?: "universal"
+
+            // 拼接新的文件名
+            val newFileName = "apk_${versionName}_${buildType}_${abi}.apk"
+            
+            output.outputFileName = newFileName
+        }
+    }
 }
 
 kotlin {
