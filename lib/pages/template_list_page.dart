@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:uuid/uuid.dart';
 import '../models/template.dart';
 import '../services/template_storage.dart';
@@ -51,25 +51,25 @@ class _TemplateListPageState extends State<TemplateListPage> {
     final displayName = template.name.isNotEmpty
         ? template.name
         : template.content;
-    final confirm = await showDialog<bool>(
+    final confirm = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => ContentDialog(
         title: const Text('删除模板'),
         content: Text('确定要删除 "$displayName" 吗？'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+          Button(
             child: const Text('取消'),
+            onPressed: () => Navigator.pop(ctx),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
+          FilledButton(
             child: const Text('删除'),
+            onPressed: () => Navigator.pop(ctx, 'delete'),
           ),
         ],
       ),
     );
 
-    if (confirm == true) {
+    if (confirm == 'delete') {
       await widget.storage.deleteTemplate(template.id);
       _loadTemplates();
     }
@@ -77,50 +77,65 @@ class _TemplateListPageState extends State<TemplateListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('模板列表'), centerTitle: true),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _templates.isEmpty
-          ? const Center(
-              child: Text(
-                '暂无模板\n点击右下角按钮新建',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
-              ),
-            )
-          : ListView.builder(
-              itemCount: _templates.length,
-              padding: const EdgeInsets.all(8),
-              itemBuilder: (context, index) {
-                final template = _templates[index];
-                final displayTitle = template.name.isNotEmpty
-                    ? template.name
-                    : (template.content.isNotEmpty ? template.content : '空模板');
-                return Card(
-                  child: ListTile(
-                    title: Text(
-                      displayTitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      _formatDate(template.createdAt),
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: () => _deleteTemplate(template),
-                    ),
-                    onTap: () => Navigator.pop(context, template),
-                  ),
-                );
-              },
+    return ScaffoldPage(
+      header: PageHeader(
+        leading: IconButton(
+          icon: const Icon(FluentIcons.back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text('模板列表'),
+        commandBar: CommandBar(
+          mainAxisAlignment: MainAxisAlignment.end,
+          primaryItems: [
+            CommandBarButton(
+              icon: const Icon(FluentIcons.add),
+              label: const Text('新建'),
+              onPressed: _createTemplate,
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _createTemplate,
-        child: const Icon(Icons.add),
+          ],
+        ),
       ),
+      content: _isLoading
+          ? const Center(child: ProgressRing())
+          : _templates.isEmpty
+              ? const Center(
+                  child: Text(
+                    '暂无模板\n点击右上角按钮新建',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _templates.length,
+                  padding: const EdgeInsets.all(8),
+                  itemBuilder: (context, index) {
+                    final template = _templates[index];
+                    final displayTitle = template.name.isNotEmpty
+                        ? template.name
+                        : (template.content.isNotEmpty
+                            ? template.content
+                            : '空模板');
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        title: Text(
+                          displayTitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          _formatDate(template.createdAt),
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(FluentIcons.delete),
+                          onPressed: () => _deleteTemplate(template),
+                        ),
+                        onPressed: () => Navigator.pop(context, template),
+                      ),
+                    );
+                  },
+                ),
     );
   }
 

@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'models/template.dart';
@@ -22,6 +21,7 @@ void main() async {
   runApp(TextemplateApp(storage: storage, defaultTemplate: defaultTemplate));
 }
 
+/// 应用根组件，配置 Fluent UI 主题。
 class TextemplateApp extends StatelessWidget {
   final TemplateStorage storage;
   final Template defaultTemplate;
@@ -34,13 +34,22 @@ class TextemplateApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return FluentApp(
       title: 'textemplate',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-        textTheme: GoogleFonts.notoSansScTextTheme(),
+      theme: FluentThemeData(
+        accentColor: Colors.blue,
+        visualDensity: VisualDensity.standard,
+        typography: Typography.raw(
+          caption: TextStyle(fontFamily: 'Source Han Sans SC'),
+          body: TextStyle(fontFamily: 'Source Han Sans SC'),
+          bodyStrong: TextStyle(fontFamily: 'Source Han Sans SC'),
+          bodyLarge: TextStyle(fontFamily: 'Source Han Sans SC'),
+          subtitle: TextStyle(fontFamily: 'Source Han Sans SC'),
+          title: TextStyle(fontFamily: 'Source Han Sans SC'),
+          titleLarge: TextStyle(fontFamily: 'Source Han Sans SC'),
+          display: TextStyle(fontFamily: 'Source Han Sans SC'),
+        ),
       ),
       home: TemplateEditPage(storage: storage, template: defaultTemplate),
     );

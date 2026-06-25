@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:gap/gap.dart';
 import '../models/template.dart';
 import '../services/template_storage.dart';
@@ -81,8 +81,11 @@ class _TemplateEditPageState extends State<TemplateEditPage> {
   void _copyResult() {
     final result = _generateResult();
     Clipboard.setData(ClipboardData(text: result));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已复制'), duration: Duration(seconds: 1)),
+    displayInfoBar(
+      context,
+      builder: (context, close) =>
+          const InfoBar(title: Text('已复制'), severity: InfoBarSeverity.success),
+      duration: const Duration(seconds: 1),
     );
   }
 
@@ -99,19 +102,27 @@ class _TemplateEditPageState extends State<TemplateEditPage> {
       success = await widget.storage.addTemplate(updated);
     }
 
-    if (success) {
-      widget.template
-        ..name = updated.name
-        ..content = updated.content;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('已保存'), duration: Duration(seconds: 1)),
+    if (mounted) {
+      if (success) {
+        widget.template
+          ..name = updated.name
+          ..content = updated.content;
+        displayInfoBar(
+          context,
+          builder: (context, close) => const InfoBar(
+            title: Text('已保存'),
+            severity: InfoBarSeverity.success,
+          ),
+          duration: const Duration(seconds: 1),
         );
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('保存失败'), duration: Duration(seconds: 1)),
+      } else {
+        displayInfoBar(
+          context,
+          builder: (context, close) => const InfoBar(
+            title: Text('保存失败'),
+            severity: InfoBarSeverity.error,
+          ),
+          duration: const Duration(seconds: 1),
         );
       }
     }
@@ -121,7 +132,7 @@ class _TemplateEditPageState extends State<TemplateEditPage> {
   Future<void> _openListPage() async {
     final result = await Navigator.push<Template>(
       context,
-      MaterialPageRoute(
+      FluentPageRoute(
         builder: (_) => TemplateListPage(storage: widget.storage),
       ),
     );
@@ -152,24 +163,22 @@ class _TemplateEditPageState extends State<TemplateEditPage> {
     final controller = TextEditingController();
     final name = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => ContentDialog(
         title: const Text('添加变量'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '变量名',
-            border: OutlineInputBorder(),
+        content: SizedBox(
+          height: 32,
+          child: TextBox(
+            controller: controller,
+            autofocus: true,
+            placeholder: '变量名',
+            maxLines: 1,
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+          Button(child: const Text('取消'), onPressed: () => Navigator.pop(ctx)),
+          FilledButton(
             child: const Text('添加'),
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
           ),
         ],
       ),
@@ -189,64 +198,74 @@ class _TemplateEditPageState extends State<TemplateEditPage> {
     setState(() => _variables.remove(name));
   }
 
-  /// 标题栏：有名显示名，无名显示内容，都无显示默认。
+  /// 标题栏：有名显示名，无名显示内容首行，都无显示默认。
   String get _displayTitle {
     final name = _nameController.text.trim();
     if (name.isNotEmpty) return name;
-    if (_contentController.text.isNotEmpty) return _contentController.text;
+    final content = _contentController.text.trim();
+    if (content.isNotEmpty) {
+      final firstLine = content.split('\n').first;
+      return firstLine.length > 40
+          ? '${firstLine.substring(0, 40)}...'
+          : firstLine;
+    }
     return 'textemplate';
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.list),
-          tooltip: '模板列表',
-          onPressed: _openListPage,
+    return ScaffoldPage(
+      header: PageHeader(
+        title: Text(
+          _displayTitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        title: Text(_displayTitle),
-        actions: [
-          TextButton.icon(
-            onPressed: _copyResult,
-            icon: const Icon(Icons.copy, size: 18),
-            label: const Text('复制结果'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.save),
-            tooltip: '保存模板',
-            onPressed: _save,
-          ),
-        ],
+        commandBar: CommandBar(
+          primaryItems: [
+            CommandBarButton(
+              icon: const Icon(FluentIcons.copy),
+              label: const Text('复制结果'),
+              onPressed: _copyResult,
+            ),
+            CommandBarButton(
+              icon: const Icon(FluentIcons.save),
+              label: const Text('保存'),
+              onPressed: _save,
+            ),
+            CommandBarButton(
+              icon: const Icon(FluentIcons.list),
+              label: const Text('模板列表'),
+              onPressed: _openListPage,
+            ),
+          ],
+        ),
       ),
-      body: SingleChildScrollView(
+      content: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: '模板名称（可选）',
-                hintText: '留空则显示模板内容',
-                border: OutlineInputBorder(),
+            InfoLabel(
+              label: '模板名称（可选）',
+              child: TextBox(
+                controller: _nameController,
+                placeholder: '留空则显示模板内容',
+                onChanged: (_) => setState(() {}),
               ),
-              onChanged: (_) => setState(() {}),
             ),
             const Gap(16),
 
-            TextField(
-              controller: _contentController,
-              decoration: const InputDecoration(
-                labelText: '模板内容',
-                hintText: r'使用 ${变量名} 标记需要替换的部分',
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
+            InfoLabel(
+              label: '模板内容',
+              child: TextBox(
+                controller: _contentController,
+                // placeholder: r'使用 ${变量名} 标记需要替换的部分',
+                minLines: 1,
+                maxLines: 5,
+                onChanged: (_) => _syncVariables(),
               ),
-              minLines: 1,
-              maxLines: 5,
-              onChanged: (_) => _syncVariables(),
             ),
             const Gap(24),
 
@@ -259,46 +278,51 @@ class _TemplateEditPageState extends State<TemplateEditPage> {
                   '变量',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                TextButton.icon(
+                const Gap(8),
+                Button(
                   onPressed: _addVariable,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('添加'),
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  style: ButtonStyle(
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    ),
                   ),
+                  child: const Text('添加'),
                 ),
               ],
             ),
-
-            if (_variables.isNotEmpty)
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: _variables.map((v) {
-                  return InputChip(
-                    label: Text(v, style: const TextStyle(fontSize: 13)),
-                    onDeleted: () => _removeVariable(v),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  );
-                }).toList(),
-              ),
             const Gap(12),
 
             ..._variables.map((v) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: TextField(
-                  key: ValueKey(v),
-                  controller: _controllers[v],
-                  decoration: InputDecoration(
-                    labelText: v,
-                    hintText: '输入"$v"的内容',
-                    border: const OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                  onChanged: (_) => setState(() {}),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(v, style: const TextStyle(fontSize: 14)),
+                        const Gap(4),
+                        GestureDetector(
+                          onTap: () => _removeVariable(v),
+                          child: Icon(
+                            FluentIcons.delete,
+                            size: 14,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(4),
+                    TextBox(
+                      key: ValueKey(v),
+                      controller: _controllers[v],
+                      placeholder: '输入"$v"的内容',
+                      maxLines: null,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ],
                 ),
               );
             }),
@@ -316,8 +340,8 @@ class _TemplateEditPageState extends State<TemplateEditPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
+                color: FluentTheme.of(context).accentColor.withAlpha(15),
+                borderRadius: BorderRadius.circular(4),
               ),
               child: SelectableText(
                 _generateResult(),

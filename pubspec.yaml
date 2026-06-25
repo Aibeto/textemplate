@@ -9,8 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  fluent_ui: ^4.10.1
   gap: ^3.0.1
-  google_fonts: ^6.2.1
   shared_preferences: ^2.5.1
   uuid: ^4.5.3
 
