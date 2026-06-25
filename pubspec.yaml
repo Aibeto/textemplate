@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  gap: ^3.0.1
+  google_fonts: ^6.2.1
   shared_preferences: ^2.5.1
   uuid: ^4.5.3
 

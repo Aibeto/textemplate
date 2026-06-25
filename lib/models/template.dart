@@ -1,3 +1,4 @@
+/// 模板数据模型。
 class Template {
   final String id;
   String name;
@@ -15,6 +16,7 @@ class Template {
     required this.updatedAt,
   });
 
+  /// 创建副本，可选覆盖指定字段。
   Template copyWith({
     String? id,
     String? name,
@@ -33,6 +35,7 @@ class Template {
     );
   }
 
+  /// 序列化为 JSON。
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -44,6 +47,7 @@ class Template {
     };
   }
 
+  /// 从 JSON 反序列化。
   factory Template.fromJson(Map<String, dynamic> json) {
     return Template(
       id: json['id'] as String,
