@@ -1,52 +1,22 @@
 /// 模板引擎：提取变量名和替换模板内容。
 class TemplateEngine {
-  static final RegExp _defaultRegex = RegExp(r'\$\{([^}]+)\}');
+  static final RegExp _regex = RegExp(r'\$\{([^}]+)\}');
 
-  /// 从内容中提取变量名。customRegex 为空时使用默认 `${}`。
-  static List<String> extractVariables(String content, {String? customRegex}) {
+  static List<String> extractVariables(String content) {
     if (content.isEmpty) return [];
 
-    final RegExp regex;
-    if (customRegex != null && customRegex.isNotEmpty) {
-      try {
-        regex = RegExp(customRegex);
-      } catch (_) {
-        return [];
-      }
-    } else {
-      regex = _defaultRegex;
-    }
-
     final variables = <String>{};
-    for (final match in regex.allMatches(content)) {
-      final name = match.groupCount >= 1 ? match.group(1)! : match.group(0)!;
-      variables.add(name);
+    for (final match in _regex.allMatches(content)) {
+      variables.add(match.group(1)!);
     }
     return variables.toList();
   }
 
-  /// 将模板中的变量替换为对应值。
-  static String replaceVariables(
-    String content,
-    Map<String, String> values, {
-    String? customRegex,
-  }) {
+  static String replaceVariables(String content, Map<String, String> values) {
     if (content.isEmpty) return '';
 
-    final RegExp regex;
-    if (customRegex != null && customRegex.isNotEmpty) {
-      try {
-        regex = RegExp(customRegex);
-      } catch (_) {
-        return content;
-      }
-    } else {
-      regex = _defaultRegex;
-    }
-
-    return content.replaceAllMapped(regex, (match) {
-      final name = match.groupCount >= 1 ? match.group(1)! : match.group(0)!;
-      return values[name] ?? '';
+    return content.replaceAllMapped(_regex, (match) {
+      return values[match.group(1)!] ?? '';
     });
   }
 }

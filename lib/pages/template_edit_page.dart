@@ -211,11 +211,11 @@ class _TemplateEditPageState extends State<TemplateEditPage> {
           TextButton.icon(
             onPressed: _copyResult,
             icon: const Icon(Icons.copy, size: 18),
-            label: const Text('复制'),
+            label: const Text('复制结果'),
           ),
           IconButton(
             icon: const Icon(Icons.save),
-            tooltip: '保存',
+            tooltip: '保存模板',
             onPressed: _save,
           ),
         ],
