@@ -5,6 +5,7 @@ import '../models/template.dart';
 /// 基于 SharedPreferences 的模板存储服务。
 class TemplateStorage {
   static const String _storageKey = 'templates';
+  static const String _lastTemplateIdKey = 'last_template_id';
   final SharedPreferences _prefs;
 
   TemplateStorage(this._prefs);
@@ -42,5 +43,13 @@ class TemplateStorage {
     final templates = await loadTemplates();
     templates.removeWhere((t) => t.id == id);
     return saveTemplates(templates);
+  }
+
+  Future<void> saveLastTemplateId(String id) async {
+    await _prefs.setString(_lastTemplateIdKey, id);
+  }
+
+  Future<String?> getLastTemplateId() async {
+    return _prefs.getString(_lastTemplateIdKey);
   }
 }

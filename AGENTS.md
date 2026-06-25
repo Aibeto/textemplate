@@ -10,7 +10,7 @@
 |---|------|
 | UI 框架 | `fluent_ui: ^4.10.1`（Win11 风格） |
 | 间距 | `gap: ^3.0.1`（`Gap` 替代 `SizedBox`） |
-| 字体 | 系统字体 `Source Han Sans SC`（思源黑体），通过 `Typography.raw()` 配置 |
+| 字体 | `Maple Mono NF CN`（内置等宽字体），通过 `FluentThemeData.fontFamily` 配置，完整字重 100-800 + Italic 变体 |
 | 持久化 | `shared_preferences`（JSON 序列化模板列表） |
 | ID 生成 | `uuid` |
 
@@ -18,12 +18,12 @@
 
 ```
 lib/
-├── main.dart                    # 入口，FluentApp + 主题配置
+├── main.dart                    # 入口，FluentApp + 主题 + 自定义侧边栏导航（IndexedStack）
 ├── models/
 │   └── template.dart            # Template 数据模型（id, name, content, createdAt, updatedAt）
 ├── pages/
-│   ├── template_edit_page.dart  # 模板编辑页（默认首页）
-│   └── template_list_page.dart  # 模板列表页
+│   ├── template_edit_page.dart  # 模板编辑页（导航栏默认页）
+│   └── template_list_page.dart  # 模板列表页（导航栏第二页）
 ├── services/
 │   └── template_storage.dart    # SharedPreferences 存取层
 └── utils/
@@ -53,10 +53,13 @@ class Template {
 ## UI 约定
 
 ### 页面结构
-- `ScaffoldPage` + `PageHeader` + `CommandBar`，非 `Scaffold` + `AppBar`
-- 编辑页 `CommandBar.primaryItems`：复制结果、保存、模板列表
-- 列表页 `PageHeader.leading`：返回按钮（`FluentIcons.back`）
+- 自定义 `Row` 布局：左侧 48px 侧边栏（`_NavIcon`）+ 右侧 `Stack` + `AnimatedOpacity` 内容区
+- 使用 `Stack` + `AnimatedOpacity` 实现页面淡入淡出切换，同时保持所有页面存活
+- 使用 `ValueNotifier<int>` 版本号机制在编辑页保存后通知列表页刷新
+- 列表页选中模板后自动切换到编辑页，通过 `HomePage` 的 `onTemplateSelected` 回调和 `ValueKey` 重建
+- 编辑页 `CommandBar.primaryItems`：复制结果、保存
 - 列表页 `CommandBar.primaryItems`：新建
+- 启动时通过 `TemplateStorage.getLastTemplateId()` 加载上次编辑的模板，显示欢迎 InfoBar
 
 ### Widget 映射（fluent_ui 替代 Material）
 
@@ -84,7 +87,7 @@ class Template {
 
 ### 变量区域
 - 不使用 Chip / Table / Wrap 展示变量列表
-- 每个变量上方显示变量名 + 红色删除图标（`FluentIcons.delete, color: Colors.red`）
+- 每个变量上方显示变量名（16px 粗体）+ 红色删除图标（`FluentIcons.delete, size: 16, color: Colors.red`）
 - 删除按钮使用 `GestureDetector` 包裹
 - 添加变量通过 "添加" 按钮弹出 `ContentDialog`
 
@@ -96,7 +99,7 @@ class Template {
 
 ### 区域分隔
 - 模板内容与变量区域之间、变量与结果之间使用 `Divider` 分隔
-- 间距统一使用 `Gap(N)`（来自 `gap` 包），不使用 `SizedBox`
+- 区域间间距统一使用 `Gap(16)`，区域内元素间距 `Gap(8)`
 
 ## 模板引擎
 
@@ -114,29 +117,25 @@ class TemplateEngine {
 
 ## 全局字体配置
 
+直接在 `FluentThemeData` 构造函数中传入 `fontFamily`，内部会自动基于 `Typography.fromBrightness()` 创建完整样式（含正确的 `fontSize`、`fontWeight`、`color`、`height`），然后通过 `apply(fontFamily:)` 附加字体：
+
 ```dart
-typography: Typography.raw(
-  caption:    TextStyle(fontFamily: 'Source Han Sans SC'),
-  body:       TextStyle(fontFamily: 'Source Han Sans SC'),
-  bodyStrong: TextStyle(fontFamily: 'Source Han Sans SC'),
-  bodyLarge:  TextStyle(fontFamily: 'Source Han Sans SC'),
-  subtitle:   TextStyle(fontFamily: 'Source Han Sans SC'),
-  title:      TextStyle(fontFamily: 'Source Han Sans SC'),
-  titleLarge: TextStyle(fontFamily: 'Source Han Sans SC'),
-  display:    TextStyle(fontFamily: 'Source Han Sans SC'),
-),
+FluentThemeData(
+  // fontFamily 通过 Typography.apply(fontFamily:) 附加到默认字体系列
+  fontFamily: 'Maple Mono NF CN',
+  // ...
+)
 ```
 
-- `Typography` 使用命名构造函数 `.raw()`，不是默认构造函数
-- `fluent_ui` 的 `Colors.red` 等颜色不是 `const`，搭配 `Icon` 使用时不要加 `const` 关键字
+**不要**使用 `Typography.raw()` 手动设置 fontFamily，那样会替换掉所有默认样式属性（尺寸、粗细、颜色、行高），导致字体颜色错误。
 
 ## 注意事项
 
 - `fluent_ui` 的 `Colors` 与 Material 的 `Colors` 不同，使用 `fluent_ui` 版本
+- `fluent_ui` 的 `Colors.red` 等颜色不是 `const`，搭配 `Icon` 使用时不要加 `const` 关键字
 - 弹窗中 `TextBox` 需用 `SizedBox` 包裹限制高度，否则 `ContentDialog` 会分配过多空间
 - `Column` 内使用 `mainAxisSize: MainAxisSize.min` 防止间距被意外拉伸
 - `copyWith` 必须包含所有可变字段，避免数据丢失
-- 加载模板时 `widget.template` 需同步 `name` 和 `content`
 - 保存新模板时 `updateTemplate` 失败需回退 `addTemplate`
 - 变量控制器生命周期：添加时 `putIfAbsent`，移除时 `dispose` + `remove`
 - `_syncVariables` 负责合并提取变量与手动添加变量，清理已移除变量的控制器
