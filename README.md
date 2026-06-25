@@ -1,17 +1,9 @@
 # textemplate
 
-A new Flutter project.
+textemplate 是一个轻量级的文本模板生成器，允许用户通过模板快速生成包含变量的文字内容。用户可以保存多个模板，模板中支持自定义变量占位符（如 `${变量名}` ），应用会自动识别变量并生成对应的输入框，实现实时预览和一键复制。
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## todo
+- [ ] 完善README.md
+- [ ] 动画效果
+- [ ] 多语言支持
+- [ ] Linux支持
